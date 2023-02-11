@@ -1,1 +1,1 @@
-"# spritesheetcutter" 
+Spritesheet Cutter is a application to cut spritesheets in a total custamizable way.
