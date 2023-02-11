@@ -42,10 +42,10 @@ tk.Button(root, text="Load Image", font=('Arial', 20),
 
 
 # X Tile and Y Tile entries
-tk.Label(root, text="X tile size: ", font=('Arial', 20)).grid(row=1, column=0)
-tk.Label(root, text="Y tile size: ", font=('Arial', 20)).grid(row=2, column=0)
-tk.Entry(root, font=('Arial', 20), width=4).grid(row=1, column=1)
-tk.Entry(root, font=('Arial', 20), width=4).grid(row=2, column=1)
+tk.Label(root, text="X tile size: ", font=('Arial', 18)).grid(row=1, column=0)
+tk.Label(root, text="Y tile size: ", font=('Arial', 18)).grid(row=2, column=0)
+tk.Entry(root, font=('Arial', 18), width=4).grid(row=1, column=1)
+tk.Entry(root, font=('Arial', 18), width=4).grid(row=2, column=1)
 
 
 #add button to show cuts
