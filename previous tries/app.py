@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 
 width = 1600
 height = 900
-
+# Required so that no error is thrown when setting displayed_image
 
 # Create main window
 root = tk.Tk()
@@ -16,12 +16,18 @@ root.title("Sprite Sheet Cutter")
 
 # Open_Image Function
 def Open_Image():
+  # Delete previous image
+  image_display.delete(displayed_image)
+  displayed_image = None
+  # Open new image
   file_path = fd.askopenfilename()
   image = Image.open(file_path)
+  # Resize image
   image = set_image_size(height/2, image)
-  image_display.config(image=image)
-  image_display.image = image
-  root.update()
+  # Put the image on the canvas
+  displayed_image = image_display.create_image(image.width(), image.height(), anchor=tk.SE, image=image)
+  # Update the canvas
+  root.reload()
   print("loaded Image")
 
 
@@ -33,8 +39,10 @@ def set_image_size(height_, image):
         height_ = height
     multiplier = math.ceil((height_)/image.height)
     print(multiplier, image.width, image.width*multiplier)
+    print(multiplier, image.height, image.height*multiplier, height_/image.height)
     image = image.resize((image.width*multiplier, image.height*multiplier), Image.Resampling.NEAREST)
     image = ImageTk.PhotoImage(image)
+    print(image.width(), image.height())
     return image
 
 
@@ -75,14 +83,14 @@ tk.Button(root, text="Show Cuts", font=("Arial", 15), command=show_cuts).grid(ro
 
 
 # Canvas to show the image
-image_display = tk.Label(root)
+image_display = tk.Canvas(root, width=width/2, height=height/2)
 image_display.grid(row=4, column=3) # USED FOR DISPLAYING IMAGE
 
 
 # Add a default image to the Label and size it up 
 image = Image.open("empty pattern.png")
 image = set_image_size(height/2, image)
-image_display.config(image=image)
+displayed_image = image_display.create_image(image.width(), image.height(), anchor=tk.SE, image=image)
 
 
 # Run the window mainloop
