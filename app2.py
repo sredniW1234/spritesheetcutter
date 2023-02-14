@@ -1,9 +1,19 @@
 import tkinter as tk, math
-from tkinter import filedialog
+from tkinter import filedialog as fd
 from PIL import Image, ImageTk
 
 # Define Functions
 
+# Change image_display image
+def open_image():
+    global image_item
+    file_path = fd.askopenfilename()
+    img = Image.open(file_path)
+    img = resize(height/2, img)
+    image_item = image_display.itemconfig(image_item, image=img)
+    root.reload()
+
+    
 # Resize image
 def resize(tall, image):
     if tall <= height:
@@ -24,7 +34,7 @@ width = 1600
 height = 900
 
 # Define Variables if needed
-
+image_item = None
 
 # Setup root window
 root = tk.Tk()
@@ -34,7 +44,7 @@ root.geometry(f'{width}x{height}')
 widgets = tk.Frame(root).grid(row=0, column=0)
 
 # Setup main widgets (load image button, cutting options, etc)
-tk.Button(widgets, text = "Load Image", font=("Arial", 20)).grid(row=0, column=0) # Load Image Widget
+tk.Button(widgets, text = "Load Image", font=("Arial", 20), command=open_image).grid(row=0, column=0) # Load Image Widget
 
 tk.Label(widgets, text = "X Tile Size: ", font=("Arial", 18)).grid(row=1, column=0) # X Tile Size Label 
 tk.Label(widgets, text = "Y Tile Size: ", font=("Arial", 18)).grid(row=2, column=0) # Y Tile Size Label
@@ -49,7 +59,7 @@ image_display = tk.Canvas(root, width=width, height=height)
 image_display.grid(row=4, column=2)
 image = Image.open("empty pattern.png")
 image = resize(height/2, image)
-image_display.create_image(0, 0, anchor= tk.NW, image=image)
+image_item = image_display.create_image(2, 2, anchor= tk.NW, image=image)
 
 
 
