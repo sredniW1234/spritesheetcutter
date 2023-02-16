@@ -10,7 +10,9 @@ def open_image():
     file_path = fd.askopenfilename()
     img = Image.open(file_path)
     img = resize(height/2, img)
+    print(image_item)
     image_item = image_display.itemconfig(image_item, image=img)
+    print(image_item)
     root.reload()
 
     
@@ -40,6 +42,7 @@ image_item = None
 root = tk.Tk()
 root.geometry(f'{width}x{height}')
 
+
 # Setup widget frame
 widgets = tk.Frame(root).grid(row=0, column=0)
 
@@ -60,6 +63,7 @@ image_display.grid(row=4, column=2)
 image = Image.open("empty pattern.png")
 image = resize(height/2, image)
 image_item = image_display.create_image(2, 2, anchor= tk.NW, image=image)
+print(image_item)
 
 
 
