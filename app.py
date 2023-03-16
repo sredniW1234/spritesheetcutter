@@ -46,7 +46,11 @@ layout = [
         sg.Column([
             [
                 # Displays Image & Cuts
-                sg.Graph(canvas_size=(graph_width, graph_height), graph_bottom_left=(0, 0), graph_top_right=(480,480), key="_GRAPH_")
+                sg.Graph(canvas_size=(graph_width, graph_height), graph_bottom_left=(0, 0), graph_top_right=(480,480), key="_GRAPH_"),
+                sg.Slider(range=(0,480), size=(25, 25), enable_events=True,tooltip="Repositions The Cuts Vertically", key="_SLIDER_Y_")
+            ],
+            [
+                sg.Slider(range=(0,400), size=(53, 25), enable_events=True, tooltip="Repositions The Cuts Horizontally", key="_SLIDER_X_", orientation="horizontal")
             ],
             [
                 sg.Push(), sg.Button("Clear all Above", key = "_CLEAR_"),
@@ -66,11 +70,13 @@ F.Display_Image(F.Resize("empty pattern.png", graph_height, False)[0], graph_hei
 
 
 w = False
-xtile = 0
-ytile = 0
-xoff = 0
-yoff = 0
+x_tile = 0
+y_tile = 0
+x_off = 0
+y_off = 0
 p = []
+cut_y = 0
+cut_x = 0
 while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED:
@@ -82,14 +88,36 @@ while True:
         else:
             w = False
 
-    if event == "_X_TILE_" or event == "_Y_TILE_" or event == "_X_OFF_" or event == "_Y_OFF_":
-        try:
-            xtile = int(values["_X_TILE_"])
-            ytile = int(values["_Y_TILE_"])
-            xoff = int(values["_X_OFF_"])
-            yoff = int(values["_Y_OFF_"])
-        except ValueError:
-            pass
+    if event == "_X_TILE_":
+       try:
+           x_tile = int(values["_X_TILE_"])
+       except ValueError:
+           pass
+
+    if event == "_Y_TILE_":
+       try:
+           y_tile = int(values["_Y_TILE_"])
+       except ValueError:
+           pass
+
+    if event == "_X_OFF_":
+       try:
+           x_off = int(values["_X_OFF_"])
+       except ValueError:
+           pass
+
+    if event == "_Y_OFF_":
+       try:
+           y_off = int(values["_Y_OFF_"])
+       except ValueError:
+           pass
+
+    if event == "_SLIDER_X_":
+        cut_x = int(values["_SLIDER_X_"])
+
+    if event == "_SLIDER_Y_":
+        cut_y = int(values["_SLIDER_Y_"])
+
 
     if event == "_CLEAR_":
         graph.erase()
@@ -106,5 +134,14 @@ while True:
         F.Display_Image(p[0], graph_height, graph)
 
     if event == "_SHOW_":
-        F.Show_Cuts(xtile, ytile, p[1], p[2], p[3], graph, xoff=xoff, yoff=yoff)
+        try:
+            boxie = F.Show_Cuts(x_tile, y_tile, p[1], p[2], p[3], graph, x_off, y_off, cut_x, cut_y)
+            print(boxie)
+        except IndexError:
+            sg.PopupOK("Must Select a valid Image")
+        except ZeroDivisionError:
+            sg.PopupOK("X Tile or Y Tile must be greater than 0")
+
+    if event == "_CUT_":
+        F.Cut_Image(p[0], boxie, graph)
 window.close()
