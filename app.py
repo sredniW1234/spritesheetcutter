@@ -1,116 +1,110 @@
 import PySimpleGUI as sg
-import Usefull_Operations as uo
-import os
+import Usefull_Operations as F
 
+graph_width, graph_height = 480, 480
 
-woh = 1
-# Set Layout
 layout = [
     [
+
         # Left Column
-        sg.Column(
+        sg.Column([
             [
-                [sg.Checkbox("Match Width?", enable_events=True, key="_WIDTH_")], # Either scales the width || height
-                [
-                    sg.In(use_readonly_for_disable=True, enable_events=True, key="_LOAD_", disabled=True), # Displays File Path
-                    sg.FileBrowse(button_text="Open Image To Cut", file_types=(("Png Files", "*.png"),))   # Button To Get File Path
-                ],
-                [sg.HSeparator()],
-                [
-                    sg.Push(), sg.Text("Tiling in X"),
-                    sg.In(size=(4, 1), enable_events=True, key="_X_TILE_"),
-                    sg.Push(), sg.VSeparator(), sg.Push(),
-                    sg.Text("Tiling In Y "),
-                    sg.In(size=(4,1), enable_events=True, key="_Y_TILE_"), sg.Push()
-                ],
-                [
-                    sg.Push(), sg.Text("Offset in X"),
-                    sg.In(size=(4,1), enable_events=True, key="_X_OFF_"),
-                    sg.Push(), sg.VSeparator(), sg.Push(),
-                    sg.Text("Offset in Y"),
-                    sg.In(size=(4,1), enable_events=True, key="_Y_OFF_"), sg.Push()
-                ],
-                [sg.HSeparator()],
-                [
-                    sg.Button("Show Selections", key="_SHOW_")
-                ]
-            ]),
+                sg.Checkbox("Match Width?",
+                            tooltip="Resizes so that either the width(checked) matches the screen or "
+                                    "the height(unchecked) matches the screen", enable_events=True, key="_WIDTH_")
+            ],
+            [
+                # Path Selection
+                sg.In(disabled=True, enable_events=True,key="_LOAD_", default_text="Image Path Will Show Here"),
+                sg.FileBrowse("Open Image", file_types=(("png Files", ".png"),))
+            ],
+            [sg.HSeparator()],
+
+            # Parameters for cutting
+            [sg.Frame("Cutting Parameters", [
+                    [
+                        sg.Text("X Tile Size"), sg.InputText(size=(4, 1), enable_events=True, key="_X_TILE_"),
+                        sg.Text("Y Tile Size"), sg.InputText(size=(4, 1), enable_events=True,key="_Y_TILE_"),
+                    ],
+                    [sg.HSeparator()],
+                    [
+                        sg.Text("Offset in X"), sg.InputText(size=(4, 1), enable_events=True, key="_X_OFF_", tooltip="Works but still WIP"),
+                        sg.Text(" Offset in Y"), sg.InputText(size=(4, 1), enable_events=True, key="_Y_OFF_", tooltip="Works but still WIP"),
+                    ]
+                ], element_justification='Center'),
+             sg.Push()
+            ],
+            # Show Cuts & Cut Button
+            [
+                sg.Button("Show Cuts", key="_SHOW_"),
+                sg.Button("Cut Image", key="_CUT_")
+            ]
+        ]),
         sg.VSeparator(),
+
         # Right Column
-        sg.Column(
+        sg.Column([
             [
-                [
-                    sg.Graph(canvas_size=(800, 800), graph_bottom_left=(0, 0), graph_top_right=(800, 800), key="_GRAPH_"), # Graph to display image
-                    sg.Slider(range=(0, 400), enable_events=True, key="_CUT_OFFSET_", )
-                ],
-                [
-                    sg.Button("Reload_Image", enable_events=True, key="_RELOAD_"),
-                    sg.Button("Clear", enable_events=True, key="_CLEAR_")
-                ]
-            ])
+                # Displays Image & Cuts
+                sg.Graph(canvas_size=(graph_width, graph_height), graph_bottom_left=(0, 0), graph_top_right=(480,480), key="_GRAPH_")
+            ],
+            [
+                sg.Push(), sg.Button("Clear all Above", key = "_CLEAR_"),
+                sg.Push(), sg.Button("Reload image Above", tooltip="Will Remove Cuts If They Exist", key="_RELOAD_"), sg.Push()
+            ]
+        ])
     ]
 ]
 
-# Setup Window
-window = sg.Window("Sprite Sheet Cutter", layout, resizable=True)
+window = sg.Window("Title", layout)
 window.finalize()
-# Create graph element
+
 graph = window.Element("_GRAPH_")
 
-# Draw's initial image
-uo.Draw_Image("empty pattern.png", 2, graph)
+
+F.Display_Image(F.Resize("empty pattern.png", graph_height, False)[0], graph_height, graph)
 
 
-h = []
-cuts_offset = 0
-selections = []
-x_tile = 0
-y_tile = 0
-x_off = 0
-y_off = 0
+w = False
+xtile = 0
+ytile = 0
+xoff = 0
+yoff = 0
+p = []
 while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED:
         break
 
-    if event == "_WIDTH_" or event == "_LOAD_":
+    if event == "_WIDTH_":
         if values["_WIDTH_"]:
-            woh = 1
-
-        elif not values["_WIDTH_"]:
-            woh = 2
-
-    if event == "_LOAD_":
-        try:
-            h = uo.Draw_Image(values["_LOAD_"], woh, graph)
-            print(h)
-        except FileNotFoundError:
-            uo.Draw_Image("empty pattern.png", 2, graph)
+            w = True
+        else:
+            w = False
 
     if event == "_X_TILE_" or event == "_Y_TILE_" or event == "_X_OFF_" or event == "_Y_OFF_":
-       try:
-           x_tile = int(values["_X_TILE_"])
-           y_tile = int(values["_Y_TILE_"])
-           x_off = int(values["_X_OFF_"])
-           y_off = int(values["_Y_OFF_"])
-       except:
-           pass
-
-    if event == "_CUT_OFFSET_":
-        cuts_offset = values["_CUT_OFFSET_"]
-
-    if event == "_SHOW_":
-        if x_tile == 0 or y_tile == 0:
-            sg.popup_ok("Tile X or Tile Y must be a non-zero positive integer")
-            continue
-        selections = uo.Draw_Grid(h[2], h[3], h[1], h[0], x_tile, y_tile, graph, X_Off=x_off, Y_Off=y_off, Cuts_Off=cuts_offset)
-
-    if event == "_RELOAD_":
-        if values["_LOAD_"] != "":
-            window.write_event_value("_LOAD_", values["_LOAD_"])
-            window.write_event_value("_SHOW_", 1)
+        try:
+            xtile = int(values["_X_TILE_"])
+            ytile = int(values["_Y_TILE_"])
+            xoff = int(values["_X_OFF_"])
+            yoff = int(values["_Y_OFF_"])
+        except ValueError:
+            pass
 
     if event == "_CLEAR_":
         graph.erase()
+        F.Display_Image(F.Resize("empty pattern.png", graph_height, False)[0], graph_height, graph)
 
+    if event == "_RELOAD_":
+        if values["_LOAD_"] != "Image Path Will Show Here":
+            window.write_event_value("_LOAD_", values["_LOAD_"])
+        else:
+            pass
+
+    if event == "_LOAD_":
+        p = F.Resize(values["_LOAD_"], graph_height, w) # p for outPut
+        F.Display_Image(p[0], graph_height, graph)
+
+    if event == "_SHOW_":
+        F.Show_Cuts(xtile, ytile, p[1], p[2], p[3], graph, xoff=xoff, yoff=yoff)
 window.close()
