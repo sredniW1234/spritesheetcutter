@@ -30,9 +30,21 @@ def Display_Image(image_data, height, graph):
     graph.DrawImage(data=image_data, location=(0, height))
 
 
-def Show_Cuts(xtile, ytile, multiplier, targetx, targety, graph, xoff = 0, yoff = 0):
-    for i in range(int(targety/((ytile + yoff) * multiplier))):
+def Show_Cuts(xtile, ytile, multiplier, targetx, targety, graph, xoff = 0, yoff = 0, cutx = 0, cuty = 0):
+    boxes = []
+    for i in range(math.floor(targety/((ytile + yoff) * multiplier))):
         y = (i+1) * (ytile + yoff) * multiplier
-        for j in range(int(targetx/((xtile + xoff) * multiplier))):
+        for j in range(math.floor(targetx/((xtile + xoff) * multiplier))):
             x = (j+1) * (xtile + xoff) * multiplier
-            graph.DrawRectangle((x-(xtile * multiplier),y-(ytile * multiplier)), (x,y), line_color="Red")
+            id = graph.DrawRectangle((x-(xtile * multiplier), y-(ytile * multiplier)), (x,y), line_color="Red")
+            graph.move_figure(id, xoff, yoff)
+            graph.move_figure(id, cutx, cuty)
+            boxes.append(id)
+    return boxes
+
+def Cut_Image(data, boxes, graph):
+    image = Image.open(BytesIO(data))
+    for i, box in enumerate(boxes):
+        top_left, bottom_right = graph.get_bounding_box(box)
+        im = image.crop()
+
