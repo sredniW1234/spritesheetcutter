@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-import Usefull_Operations as F
+import Functions as F
 
 graph_width, graph_height = 480, 480
 
@@ -17,6 +17,10 @@ layout = [
                 # Path Selection
                 sg.In(disabled=True, enable_events=True,key="_LOAD_", default_text="Image Path Will Show Here"),
                 sg.FileBrowse("Open Image", file_types=(("png Files", ".png"),))
+            ],
+            [
+                sg.In(disabled=True, enable_events=True, key="_SAVE_", default_text="Locations Of Saved Images Will Appear Here"),
+                sg.FolderBrowse("Location Of Final Sprites")
             ],
             [sg.HSeparator()],
 
@@ -77,8 +81,10 @@ y_off = 0
 p = []
 cut_y = 0
 cut_x = 0
+save_location = 0
 while True:
     event, values = window.read()
+
     if event == sg.WIN_CLOSED:
         break
 
@@ -88,36 +94,21 @@ while True:
         else:
             w = False
 
-    if event == "_X_TILE_":
-       try:
-           x_tile = int(values["_X_TILE_"])
-       except ValueError:
-           pass
-
-    if event == "_Y_TILE_":
-       try:
-           y_tile = int(values["_Y_TILE_"])
-       except ValueError:
-           pass
-
-    if event == "_X_OFF_":
-       try:
-           x_off = int(values["_X_OFF_"])
-       except ValueError:
-           pass
-
-    if event == "_Y_OFF_":
-       try:
-           y_off = int(values["_Y_OFF_"])
-       except ValueError:
-           pass
+    if event == "_Y_OFF_" or event == "_X_OFF_" or event == "_Y_TILE_" or event == "_X_TILE_":
+        if type(values["_Y_OFF_"]) == str and values["_Y_OFF_"].isnumeric():
+            y_off = int(values["_Y_OFF_"])
+        if type(values["_X_OFF_"]) == str and values["_X_OFF_"].isnumeric():
+            x_off = int(values["_X_OFF_"])
+        if type(values["_Y_TILE_"]) == str and values["_Y_TILE_"].isnumeric():
+            y_tile = int(values["_Y_TILE_"])
+        if type(values["_X_TILE_"]) == str and values["_X_TILE_"].isnumeric():
+            x_tile = int(values["_X_TILE_"])
 
     if event == "_SLIDER_X_":
         cut_x = int(values["_SLIDER_X_"])
 
     if event == "_SLIDER_Y_":
         cut_y = int(values["_SLIDER_Y_"])
-
 
     if event == "_CLEAR_":
         graph.erase()
@@ -130,18 +121,26 @@ while True:
             pass
 
     if event == "_LOAD_":
-        p = F.Resize(values["_LOAD_"], graph_height, w) # p for outPut
-        F.Display_Image(p[0], graph_height, graph)
+        try:
+            p = F.Resize(values["_LOAD_"], graph_height, w) # p for outPut
+            F.Display_Image(p[0], graph_height, graph)
+        except FileNotFoundError:
+            sg.popup_ok(f"No File Found At {values['_LOAD_']}")
 
     if event == "_SHOW_":
         try:
             boxie = F.Show_Cuts(x_tile, y_tile, p[1], p[2], p[3], graph, x_off, y_off, cut_x, cut_y)
-            print(boxie)
         except IndexError:
             sg.PopupOK("Must Select a valid Image")
         except ZeroDivisionError:
             sg.PopupOK("X Tile or Y Tile must be greater than 0")
 
+    if event == "_SAVE_":
+        save_location = values["_SAVE_"]
+
     if event == "_CUT_":
-        F.Cut_Image(p[0], boxie, graph)
+        try:
+            F.Cut_Image(p[0], boxie, save_location, graph)
+        except FileNotFoundError:
+            sg.popup_ok("Please Select A Valid File Location")
 window.close()
