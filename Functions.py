@@ -1,4 +1,6 @@
 import math
+import os
+import glob
 from io import BytesIO
 from PIL import Image
 
@@ -22,6 +24,7 @@ def Resize(file_path, target, w):
         image.save(output, format="PNG")
         data = output.getvalue()
     # Return it
+
     return [data, multiplier, image.width, image.height]
 
 
@@ -49,16 +52,58 @@ def Cut_Image(data, boxes_data, location, graph):
         ((left, top), (right, bottom)) = graph.get_bounding_box(box)
         im = image.crop((left + 1 - boxes_data[1][0], bottom + 1 - boxes_data[1][1], right - 1 - boxes_data[1][0],
                          top - 1 - boxes_data[1][1]))
-        im.save(f"{location}/box{i}.png")
+        im.save(f"{location}/box__{i}.png")
 
 
-# TODO: Delete function that passes in a image location and deletes it.
-# TODO: 2 Functions to find fully transparent images and delete them.
-# TODO: FAST FUNCTION: get top left, bottom right
+def Delete_File(file_loc):
+    os.remove(file_loc)
+
+
+def Fast_scan(image_folder):
+    # Get the images
+    images = [x for x in os.listdir(image_folder) if x.endswith(".png")]
+    x_c, y_c = 0, 0
+
+    # loop through every image
+    for i, image_ in enumerate(images):
+
+       # Open the image
+        image_loc = f"{image_folder}\\{image_}"
+        image = Image.open(image_loc)
+
+        print(image.width, image.height)
+        # Set the x change and y change depending on image height & withs
+        if image.width > image.height:
+            x_c = math.floor(image.width/image.height)
+            y_c = 1
+            # print(image_, x_c, y_c)
+        elif image.width < image.height:
+            x_c = 1
+            y_c = math.floor(image.height/image.width)
+            # print(image_, x_c, y_c)
+        elif image.width == image.height:
+            x_c = 1
+            y_c = 1
+
+        # Check every pixel
+        x, y = 0, 0
+        while image.getpixel((x, y))[3] == 0:
+            if x+x_c != image.width and y+y_c != image.height:
+                # print(x, y)
+                x += x_c
+                y += y_c
+            else:
+                break
+        else:
+            continue
+        Delete_File(image_loc)
+
+
+# TODO: 2 Functions to find fully transparent images and delete them. - DONE
+# TODO: FAST FUNCTION: get top left, bottom right - DONE
 #   and go through DIAGONALLY to see if pixels are all transparent and deletes the image, else it stops the check and
 #   keeps the image.
 
 # TODO: SLOW FUNCTION: get top left, bottom right
 #   and go through SNAKE LIKE to see if pixels are all transparent and deletes the image, else it stops the check and
 #   keeps the image.
-
