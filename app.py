@@ -74,6 +74,7 @@ empty_pattern_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x04\x00\x00\x
                      b'\x00\x08\x13\x00\x08\x13\x00\x08\x13\x00\x08\x13\x00\x08\x13\x00\x08\x13\x00\x08\x13\x00\x08' \
                      b'\xfb\x01\x1e\xc8$u\xd0\xb2 /\x00\x00\x00\x00IEND\xaeB`\x82 '
 
+sg.theme("DarkGrey1")
 
 layout = [
     [
@@ -106,7 +107,7 @@ layout = [
                     [
                         sg.Text("Offset in X"), sg.InputText(size=(4, 1), enable_events=True, key="_X_OFF_", tooltip="Works but still WIP"),
                         sg.Text(" Offset in Y"), sg.InputText(size=(4, 1), enable_events=True, key="_Y_OFF_", tooltip="Works but still WIP"),
-                    ]
+                    ],
                 ], element_justification='Center'),
              sg.Push()
             ],
@@ -122,7 +123,18 @@ layout = [
                         sg.Text("Remove Fully Transparent Sprite To Not Clog Folder:")
                     ],
                     [
-                        sg.Button("Fast Remove", tooltip="(Chance to not get everything if unlucky)", key="_FAST_")
+                        sg.Push(), sg.Button("Fast Remove", tooltip="(Chance to not get everything if unlucky)", key="_FAST_"), sg.Push()
+                    ],[sg.HSep()],
+                    [
+                        sg.Text("Remove Duplicate Sprites Of Your Choosing:")
+                    ],
+                    [
+                        sg.In(disabled=True, enable_events=True, key="_DUPE_", default_text="Dupe Sprite Location"),
+                        sg.FileBrowse("Dupe Remove", tooltip="Removes Selected Duplicates of sprite", file_types=(("png Files", ".png"),))
+                    ],[sg.HSep()],
+                    [
+                        sg.Text("Automatically Remove Duplicate Sprites:"),
+                        sg.Push(), sg.Button("Auto Dupe Remove", tooltip="Removes Duplicates Of All Sprites", key="_DUPEALL_")
                     ]
                 ])
             ]
@@ -146,7 +158,6 @@ layout = [
         ])
     ]
 ]
-
 window = sg.Window("Title", layout)
 window.finalize()
 
@@ -233,5 +244,16 @@ while True:
         try:
             F.Fast_scan(values["_SAVE_"])
         except FileNotFoundError:
-            sg.PopupOK("Select A Output Folder")
+            sg.PopupOK("Please Select A Output Folder")
+    
+    if event == "_DUPE_":
+        try:
+            F.Dupe_remove(values["_DUPE_"])
+        except FileNotFoundError:
+            sg.PopupOK("Please Select A Sprite")
+    if event == "_DUPEALL_":
+        try:
+            F.Auto_Dupe_remove(values["_SAVE_"], sg)
+        except FileNotFoundError:
+            sg.PopupOK("Please Select A Output Folder")
 window.close()
