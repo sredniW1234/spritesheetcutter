@@ -98,8 +98,44 @@ def Fast_scan(image_folder):
             continue
         Delete_File(image_loc)
 
+def img_to_bytes(img_loc):
+    image = Image.open(img_loc)
+    with BytesIO() as output:
+        image.save(output, format="PNG")
+        data = output.getvalue()
+    return data
 
-# TODO: 2 Functions to find fully transparent images and delete them. - DONE
+def Dupe_remove(image):
+    image_folder = image
+    image_loc = image.split("/")
+    image_folder = image_folder.replace(image_loc[-1], "")
+    images = [x for x in os.listdir(image_folder) if x.endswith(".png")]
+    c = 0
+    for i, current_image in enumerate(images):
+        if img_to_bytes(image_folder + current_image) == img_to_bytes(image):
+            if image_folder + current_image == image:
+                continue
+            else:
+                Delete_File(image_folder + current_image)
+
+def Auto_Dupe_remove(image_folder, sg):
+    image_folder = image_folder+"/"
+    images = [x for x in os.listdir(image_folder) if x.endswith(".png")]
+    del_images = []
+    for i, current_image in enumerate(images):
+        for i, dupe in enumerate(images):
+            if image_folder + dupe in del_images or image_folder + current_image in del_images:
+                continue
+            if img_to_bytes(image_folder + dupe) == img_to_bytes(image_folder + current_image):
+                if image_folder + dupe == image_folder + current_image:
+                    continue
+                else:
+                    del_images.append(image_folder + dupe)
+                    Delete_File(image_folder + dupe)
+    sg.PopupOK("Done")
+            
+
+# TODO: 2 Functions to find fully transparent images and delete them. - 1/2 DONE
 # TODO: FAST FUNCTION: get top left, bottom right - DONE
 #   and go through DIAGONALLY to see if pixels are all transparent and deletes the image, else it stops the check and
 #   keeps the image.
