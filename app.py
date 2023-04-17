@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 import Functions as F
+import os
 
 graph_width, graph_height = 480, 480
 empty_pattern_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x04\x00\x00\x00\x02@\x08\x00\x00\x00\x006\xfeK\t' \
@@ -92,7 +93,8 @@ layout = [
                 sg.FileBrowse("Open Image", file_types=(("png Files", ".png"),))
             ],
             [
-                sg.In(disabled=True, enable_events=True, key="_SAVE_", default_text="Locations Of Saved Images Will Appear Here"),
+                sg.In(disabled=True, enable_events=True, key="_SAVE_",
+                      default_text="Locations Of Saved Images Will Appear Here"),
                 sg.FolderBrowse("Location Of Final Sprites")
             ],
             [sg.HSeparator()],
@@ -105,9 +107,17 @@ layout = [
                     ],
                     [sg.HSeparator()],
                     [
-                        sg.Text("Offset in X"), sg.InputText(size=(4, 1), enable_events=True, key="_X_OFF_", tooltip="Works but still WIP"),
-                        sg.Text(" Offset in Y"), sg.InputText(size=(4, 1), enable_events=True, key="_Y_OFF_", tooltip="Works but still WIP"),
+                        sg.Text("Offset in X"), sg.InputText(size=(4, 1), enable_events=True, key="_X_OFF_",
+                                                             tooltip="Works but still WIP"),
+                        sg.Text(" Offset in Y"), sg.InputText(size=(4, 1), enable_events=True, key="_Y_OFF_",
+                                                              tooltip="Works but still WIP"),
                     ],
+                    [sg.HSeparator()],
+                    [
+                        sg.Text("Naming Convention:"), sg.InputText(size=(14,1), enable_events=True, key="_NAMING_",
+                tooltip="How each cut sprite will be named. DO NOT INCLUDE NUMBER AT THE END. e.g. Box__1, Box__2, etc",
+                                                                    default_text="Box__")
+                    ]
                 ], element_justification='Center'),
              sg.Push()
             ],
@@ -123,18 +133,40 @@ layout = [
                         sg.Text("Remove Fully Transparent Sprite To Not Clog Folder:")
                     ],
                     [
-                        sg.Push(), sg.Button("Fast Remove", tooltip="(Chance to not get everything if unlucky)", key="_FAST_"), sg.Push()
-                    ],[sg.HSep()],
+                        sg.Push(), sg.Button("Fast Remove", tooltip="(Chance to not get everything if unlucky)",
+                                             key="_FAST_"), sg.Push()
+                    ], [sg.HSep()],
                     [
                         sg.Text("Remove Duplicate Sprites Of Your Choosing:")
                     ],
                     [
                         sg.In(disabled=True, enable_events=True, key="_DUPE_", default_text="Dupe Sprite Location"),
-                        sg.FileBrowse("Dupe Remove", tooltip="Removes Selected Duplicates of sprite", file_types=(("png Files", ".png"),))
+                        sg.FileBrowse("Dupe Remove", tooltip="Removes Selected Duplicates of sprite",
+                                      file_types=(("png Files", ".png"),))
                     ],[sg.HSep()],
                     [
                         sg.Text("Automatically Remove Duplicate Sprites:"),
-                        sg.Push(), sg.Button("Auto Dupe Remove", tooltip="Removes Duplicates Of All Sprites", key="_DUPEALL_")
+                        sg.Push(), sg.Button("Auto Dupe Remove", tooltip="Removes Duplicates Of All Sprites",
+                                             key="_DUPEALL_")
+                    ],[sg.HSep()],
+                    [
+                        sg.Text("Rename Multiple Sprites:")
+                    ],
+                    [
+                        sg.In(default_text="Files Paths Go Here", disabled=True, enable_events=True, key="_LOAD_"),
+                        sg.FilesBrowse(size=(6, 0)),
+                        sg.Checkbox("Bi-Naming", enable_events=True, key="_BI_NAMING_")
+                    ],
+                    [
+                        sg.Text("Naming Convention:   "),
+                        sg.In(enable_events=True, key="_NAME_")
+                    ],
+                    [
+                        sg.Text("Naming Convention 2:", visible=False, key="_NAME_TEXT_"),
+                        sg.In(enable_events=True, key="_NAME2_", visible=False)
+                    ],
+                    [
+                        sg.Push(), sg.Button("Rename", enable_events=True, key="_RENAME_", size=(14, 0)), sg.Push()
                     ]
                 ])
             ]
@@ -143,13 +175,18 @@ layout = [
 
         # Right Column
         sg.Column([
+            [sg.Slider(range=(25, 200), default_value=100, orientation="horizontal", size=(53, 25), resolution=5,
+                       tick_interval=25, tooltip="Image Zoom", enable_events=True, key="_SLIDER_ZOOM_")],
             [
                 # Displays Image & Cuts
-                sg.Graph(canvas_size=(graph_width, graph_height), graph_bottom_left=(0, 0), graph_top_right=(480,480), key="_GRAPH_"),
-                sg.Slider(range=(0,480), size=(25, 25), enable_events=True,tooltip="Repositions The Cuts Vertically", key="_SLIDER_Y_")
+                sg.Graph(canvas_size=(graph_width, graph_height), graph_bottom_left=(0, 0), graph_top_right=(480,480),
+                         key="_GRAPH_"),
+                sg.Slider(range=(-480,480), size=(25, 25), default_value=0, enable_events=True,
+                          tooltip="Repositions The Cuts Vertically", key="_SLIDER_Y_")
             ],
             [
-                sg.Slider(range=(0,400), size=(53, 25), enable_events=True, tooltip="Repositions The Cuts Horizontally", key="_SLIDER_X_", orientation="horizontal")
+                sg.Slider(range=(-480,480), size=(53, 25), default_value=0, enable_events=True, tooltip="Repositions The Cuts Horizontally",
+                          key="_SLIDER_X_", orientation="horizontal")
             ],
             [
                 sg.Push(), sg.Button("Clear all Above", key = "_CLEAR_"),
@@ -174,6 +211,13 @@ p = []
 cut_y = 0
 cut_x = 0
 save_location = 0
+zoom = 100
+boxie = []
+name = ""
+files = ""
+name1 = ""
+name2 = ""
+bi_naming = False
 while True:
     event, values = window.read()
 
@@ -198,9 +242,11 @@ while True:
 
     if event == "_SLIDER_X_":
         cut_x = int(values["_SLIDER_X_"])
+        window.write_event_value("_SHOW_", [])
 
     if event == "_SLIDER_Y_":
         cut_y = int(values["_SLIDER_Y_"])
+        window.write_event_value("_SHOW_", [])
 
     if event == "_CLEAR_":
         graph.erase()
@@ -214,12 +260,13 @@ while True:
 
     if event == "_LOAD_":
         try:
-            p = F.Resize(values["_LOAD_"], graph_height, w) # p for outPut
+            p = F.Resize(values["_LOAD_"], graph_height, w, zoom) # p for outPut
             F.Display_Image(p[0], graph_height, graph)
         except FileNotFoundError:
             sg.popup_ok(f"No File Found At {values['_LOAD_']}")
 
     if event == "_SHOW_":
+        F.Clear_Boxies(graph, boxie)
         try:
             boxie = F.Show_Cuts(x_tile, y_tile, p[1], p[2], p[3], graph, x_off, y_off, cut_x, cut_y)
         except IndexError:
@@ -232,7 +279,7 @@ while True:
 
     if event == "_CUT_":
         try:
-            F.Cut_Image(p[0], boxie, save_location, graph)
+            F.Cut_Image(p[0], boxie, save_location, graph, name)
         except FileNotFoundError:
             sg.popup_ok("Please Select A Valid File Location")
         except TypeError:
@@ -245,15 +292,63 @@ while True:
             F.Fast_scan(values["_SAVE_"])
         except FileNotFoundError:
             sg.PopupOK("Please Select A Output Folder")
-    
+
     if event == "_DUPE_":
         try:
             F.Dupe_remove(values["_DUPE_"])
         except FileNotFoundError:
             sg.PopupOK("Please Select A Sprite")
+
     if event == "_DUPEALL_":
         try:
             F.Auto_Dupe_remove(values["_SAVE_"], sg)
         except FileNotFoundError:
             sg.PopupOK("Please Select A Output Folder")
+
+    if event == "_SLIDER_ZOOM_":
+        zoom = values["_SLIDER_ZOOM_"]
+        if values["_LOAD_"] != "Image Path Will Show Here":
+            window.write_event_value("_LOAD_", values["_LOAD_"])
+        else:
+            pass
+
+    if event == "_NAMING_":
+        name = values["_NAMING_"]
+
+    if event == "_BI_NAMING_":
+        window["_NAME_TEXT_"].update(visible=values["_BI_NAMING_"])
+        window["_NAME2_"].update(visible=values["_BI_NAMING_"])
+        bi_naming = values["_BI_NAMING_"]
+        print(bi_naming)
+
+    if event == "_NAME2_":
+        name2 = values["_NAME2_"]
+
+    if event == "_LOAD_":
+        files = values["_LOAD_"]
+
+    if event == "_NAME_":
+        name = values["_NAME_"]
+
+    if event == "_RENAME_":
+        try:
+            if not bi_naming:
+                for i, file in enumerate(files.split(";")):
+                    extension = "."+file.split(".")[-1]
+                    path = file.replace(file.split("/")[-1], '')
+                    os.rename(file, path + name1 + str(i) + extension)
+                sg.PopupOK("Done")
+            else:
+                for i, file in enumerate(files.split(";")):
+                    if i % 2:
+                        extension = "." + file.split(".")[-1]
+                        path = file.replace(file.split("/")[-1], '')
+                        os.rename(file, path + name2 + str(i) + extension)
+                    else:
+                        extension = "." + file.split(".")[-1]
+                        path = file.replace(file.split("/")[-1], '')
+                        os.rename(file, path + name1 + str(i) + extension)
+                sg.PopupOK("Done")
+        except FileNotFoundError:
+            sg.PopupOK("Please Select Valid File(s)")
 window.close()
