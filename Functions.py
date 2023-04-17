@@ -6,20 +6,21 @@ from PIL import Image
 
 
 # Resizes Image
-def Resize(file_path, target, w):
+def Resize(file_path, target, w, zoom):
     # Open Image
     image = Image.open(file_path)
     # Get Width and Height
     width, height = image.width, image.height
     if w:
         # Multiplier to multiply Width to get to Target
-        multiplier = math.ceil(target / width)
+        multiplier = math.ceil((zoom / 100) * (target / width))
     else:
         # Multiplier to multiply Height to get to Target
-        multiplier = math.ceil(target / height)
+        multiplier = math.ceil((zoom / 100) * (target / height))
     # Resize Image
     image = image.resize((width * multiplier, height * multiplier), Image.NEAREST)
     # Convert it to Bytes
+    print(multiplier, width, height)
     with BytesIO() as output:
         image.save(output, format="PNG")
         data = output.getvalue()
@@ -46,13 +47,18 @@ def Show_Cuts(xtile, ytile, multiplier, targetx, targety, graph, xoff=0, yoff=0,
     return [boxes, [cutx, cuty]]
 
 
-def Cut_Image(data, boxes_data, location, graph):
+def Cut_Image(data, boxes_data, location, graph, naming):
     image = Image.open(BytesIO(data))
     for i, box in enumerate(boxes_data[0]):
         ((left, top), (right, bottom)) = graph.get_bounding_box(box)
         im = image.crop((left + 1 - boxes_data[1][0], bottom + 1 - boxes_data[1][1], right - 1 - boxes_data[1][0],
                          top - 1 - boxes_data[1][1]))
-        im.save(f"{location}/box__{i}.png")
+        im.save(f"{location}/{naming}{i}.png")
+
+def Clear_Boxies(graph, boxies):
+    if boxies != []:
+        for i, id in enumerate(boxies[0]):
+            graph.DeleteFigure(id)
 
 
 def Delete_File(file_loc):
@@ -133,7 +139,7 @@ def Auto_Dupe_remove(image_folder, sg):
                     del_images.append(image_folder + dupe)
                     Delete_File(image_folder + dupe)
     sg.PopupOK("Done")
-            
+
 
 # TODO: 2 Functions to find fully transparent images and delete them. - 1/2 DONE
 # TODO: FAST FUNCTION: get top left, bottom right - DONE
